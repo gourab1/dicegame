@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dice Rolling Game</title>
+    <style>
+        #dice {
+            font-size: 48px;
+            padding: 10px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 50%;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+        }
+
+        /* Define a CSS class to highlight rows */
+        .highlighted {
+            background-color: yellow;
+        }
+
+        #scatterPlot {
+            width: 50%;
+            margin: 20px auto;
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Dice Rolling Game</h1>
+    <p>Click the button to roll the dice:</p>
+    <button id="rollButton">Roll the Dice</button>
+    <p>Your roll: <span id="dice">⚀</span></p>
+    <p id="probabilityText">Calculated probability of landing 4 from <span id="experimentCount">0</span> experiments: <span id="probability">N/A</span></p>
+
+    <div id="scatterPlot"></div>
+
+    <h2>Roll History Table</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Roll #</th>
+                <th>Number</th>
+            </tr>
+        </thead>
+        <tbody id="rollHistory">
+        </tbody>
+    </table>
+
+    <script>
+        let rollCount = 0;
+        let foursCount = 0;
+        let experimentCount = 0;
+        const scatterData = [];
+
+        // Function to generate a random number between 1 and 6 (inclusive)
+        function rollDice() {
+            return Math.floor(Math.random() * 6) + 1;
+        }
+
+        // Function to update the dice display with the rolled value
+        function updateDiceDisplay(rolledValue) {
+            const diceElement = document.getElementById('dice');
+            // Use Unicode symbols for dice faces
+            const diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+            diceElement.textContent = diceFaces[rolledValue - 1];
+        }
+
+        // Function to update the roll history table and scatter plot
+        function updateRollHistory(rolledValue) {
+            const rollHistoryTable = document.getElementById('rollHistory');
+            const newRow = rollHistoryTable.insertRow();
+            const cell1 = newRow.insertCell(0);
+            const cell2 = newRow.insertCell(1);
+
+            rollCount++;
+            cell1.textContent = rollCount;
+            cell2.textContent = rolledValue; // Display the rolled value
+
+            // Highlight the row if the rolled value is 4
+            if (rolledValue === 4) {
+                newRow.classList.add('highlighted');
+                foursCount++;
+            }
+
+            // Calculate and display the probability as a fraction
+            const probabilityText = document.getElementById('probabilityText');
+            const probability = document.getElementById('probability');
+            const experimentCountElement = document.getElementById('experimentCount');
+            
+            experimentCount++;
+            experimentCountElement.textContent = experimentCount;
+
+            const fraction = simplifyFraction(foursCount, rollCount);
+            const decimalProbability = (foursCount / rollCount).toFixed(4);
+
+            if (foursCount === 0) {
+                probability.textContent = `${fraction} (${decimalProbability})`;
+            } else {
+                probability.textContent = `${fraction} (${decimalProbability})`;
+            }
+
+            // Update the scatter plot data
+            scatterData.push({ x: rollCount, y: parseFloat(decimalProbability) });
+            updateScatterPlot();
+        }
+
+        // Function to simplify a fraction
+        function simplifyFraction(numerator, denominator) {
+            const gcd = (a, b) => {
+                if (b === 0) {
+                    return a;
+                }
+                return gcd(b, a % b);
+            };
+
+            const commonDivisor = gcd(numerator, denominator);
+            return `${numerator / commonDivisor}/${denominator / commonDivisor}`;
+        }
+
+        // Function to update the scatter plot
+        function updateScatterPlot() {
+            const scatterPlotData = [
+                {
+                    x: scatterData.map(data => data.x),
+                    y: scatterData.map(data => data.y),
+                    mode: 'markers',
+                    type: 'scatter',
+                    marker: { size: 6 },
+                },
+                {
+                    x: [0, rollCount],
+                    y: [0.1667, 0.1667],
+                    mode: 'lines',
+                    type: 'scatter',
+                    line: { color: 'red', dash: 'dash' },
+                    name: 'Y=0.1667'
+                }
+            ];
+
+            const layout = {
+                xaxis: {
+                    title: 'Number of Dice Rolls',
+                },
+                yaxis: {
+                    title: 'Probability of Landing 4',
+                },
+                margin: { t: 0 },
+            };
+
+            Plotly.newPlot('scatterPlot', scatterPlotData, layout);
+        }
+
+        // Event listener for the roll button
+        document.getElementById('rollButton').addEventListener('click', function () {
+            const rolledValue = rollDice();
+            updateDiceDisplay(rolledValue);
+            updateRollHistory(rolledValue);
+        });
+    </script>
+
+    <!-- Include Plotly.js library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</body>
+</html>
